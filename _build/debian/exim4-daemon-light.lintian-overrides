@@ -1,0 +1,5 @@
+exim4-daemon-light: elevated-privileges 4755 root/root [usr/sbin/exim4]
+# required by FHS
+exim4-daemon-light: ldconfig-escape usr/sbin/exim4 [usr/lib/sendmail]
+# false positive 973759
+exim4-daemon-light: debian-changelog-file-is-a-symlink [usr/share/doc/exim4-daemon-light/changelog.gz]

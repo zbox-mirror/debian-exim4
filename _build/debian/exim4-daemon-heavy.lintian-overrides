@@ -1,0 +1,6 @@
+exim4-daemon-heavy: elevated-privileges 4755 root/root [usr/sbin/exim4]
+exim4-daemon-heavy: package-contains-empty-directory [usr/lib/exim4/local_scan/]
+# required by FHS
+exim4-daemon-heavy: ldconfig-escape usr/sbin/exim4 [usr/lib/sendmail]
+# false positive 973759
+exim4-daemon-heavy: debian-changelog-file-is-a-symlink [usr/share/doc/exim4-daemon-heavy/changelog.gz]
