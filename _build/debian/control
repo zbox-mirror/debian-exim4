@@ -4,8 +4,8 @@
 Source: exim4
 Section: mail
 Priority: standard
-Maintainer: Package Store <pkgstore@mail.ru>
-Uploaders: Package Store <pkgstore@mail.ru>
+Maintainer: z17 Dev <mail@z17.dev>
+Uploaders: z17 Dev <mail@z17.dev>
 Build-Depends: debhelper-compat (= 13),
  default-libmysqlclient-dev,
  docbook-xml,
