@@ -1,4 +1,4 @@
-<package name="exim4" project="home:pkgstore:deb">
+<package name="exim4" project="home:unixstore:debian">
   <title/>
   <description/>
 </package>

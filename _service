@@ -1,7 +1,7 @@
 <services>
   <service name="obs_scm">
     <param name="scm">git</param>
-    <param name="url">https://github.com/debpkgs/exim4.git</param>
+    <param name="url">https://github.com/unixstore-debian/exim4.git</param>
     <param name="revision">main</param>
     <param name="version">_none_</param>
     <param name="filename">exim4</param>
