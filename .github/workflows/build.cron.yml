@@ -2,7 +2,7 @@ name: "Debian (Cron)"
 
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: '0 2 * * *'
 
 env:
   domain: "${{ github.server_url }}"
