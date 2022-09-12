@@ -1,0 +1,101 @@
+name: "Mirror"
+
+on:
+  - push
+
+env:
+  dst_owner: "${{ github.repository_owner }}-mirror"
+
+jobs:
+
+  # ------------------------------------------------------------------------------------------------------------------ #
+  # GitHub.
+  # ------------------------------------------------------------------------------------------------------------------ #
+
+  mirror_github:
+    runs-on: ubuntu-latest
+    name: "GitHub"
+    env:
+      dst_domain: "${{ github.server_url }}"
+    steps:
+      - run: |
+          echo "repo_name=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+        shell: bash
+      - run: |
+          curl -X POST \
+          -H 'Authorization: Bearer ${{ secrets.BOT_GITHUB_TOKEN }}' \
+          -H 'Accept: application/vnd.github+json' \
+          '${{ github.api_url }}/orgs/${{ env.dst_owner }}/repos' \
+          -d '{"name":"${{ env.repo_name }}","private":false,"has_issues":true,"has_projects":false,"has_wiki":true}' \
+          -s -o '/dev/null'
+        shell: bash
+      - uses: ghastore/mirror@main
+        with:
+          src_repo: "${{ github.server_url }}/${{ github.repository }}.git"
+          src_user: "${{ secrets.BOT_GITHUB_NAME }}"
+          src_token: "${{ secrets.BOT_GITHUB_TOKEN }}"
+          dst_repo: "${{ env.dst_domain }}/${{ env.dst_owner }}/${{ env.repo_name }}.git"
+          dst_user: "${{ secrets.BOT_GITHUB_NAME }}"
+          dst_token: "${{ secrets.BOT_GITHUB_TOKEN }}"
+
+  # ------------------------------------------------------------------------------------------------------------------ #
+  # GitLab.
+  # ------------------------------------------------------------------------------------------------------------------ #
+
+  mirror_gitlab:
+    runs-on: ubuntu-latest
+    name: "GitLab"
+    env:
+      dst_domain: "https://gitlab.com"
+      dst_nsID: '57669711'
+    steps:
+      - run: |
+          echo "repo_name=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+        shell: bash
+      - run: |
+          curl -X POST \
+          -H 'Authorization: Bearer ${{ secrets.BOT_GITLAB_TOKEN }}' \
+          -H 'Content-Type: application/json' \
+          '${{ env.dst_domain }}/api/v4/projects' \
+          -d '{"name":"${{ env.repo_name }}","path":"${{ env.repo_name }}","namespace_id":"${{ env.dst_nsID }}"}' \
+          -s -o '/dev/null'
+        shell: bash
+      - uses: ghastore/mirror@main
+        with:
+          src_repo: "${{ github.server_url }}/${{ github.repository }}.git"
+          src_user: "${{ secrets.BOT_GITHUB_NAME }}"
+          src_token: "${{ secrets.BOT_GITHUB_TOKEN }}"
+          dst_repo: "${{ env.dst_domain }}/${{ env.dst_owner }}/${{ env.repo_name }}.git"
+          dst_user: "${{ secrets.BOT_GITLAB_NAME }}"
+          dst_token: "${{ secrets.BOT_GITLAB_TOKEN }}"
+
+  # ------------------------------------------------------------------------------------------------------------------ #
+  # Codeberg.
+  # ------------------------------------------------------------------------------------------------------------------ #
+
+  mirror_codeberg:
+    runs-on: ubuntu-latest
+    name: "Codeberg"
+    env:
+      dst_domain: "https://codeberg.org"
+    steps:
+      - run: |
+          echo "repo_name=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+        shell: bash
+      - run: |
+          curl -X POST \
+          -H 'Authorization: token ${{ secrets.BOT_CODEBERG_TOKEN }}' \
+          -H 'Accept: application/json' \
+          -H 'Content-Type: application/json' \
+          '${{ env.dst_domain }}/api/v1/orgs/${{ env.dst_owner }}/repos' \
+          -d '{"name":"${{ env.repo_name }}"}' \
+          -s -o '/dev/null'
+        shell: bash
+      - uses: ghastore/mirror@main
+        with:
+          src_repo: "${{ github.server_url }}/${{ github.repository }}.git"
+          src_user: "${{ secrets.BOT_GITHUB_NAME }}"
+          src_token: "${{ secrets.BOT_GITHUB_TOKEN }}"
+          dst_repo: "${{ env.dst_domain }}/${{ env.dst_owner }}/${{ env.repo_name }}.git"
+          dst_user: "${{ secrets.BOT_CODEBERG_NAME }}"
+          dst_token: "${{ secrets.BOT_CODEBERG_TOKEN }}"
