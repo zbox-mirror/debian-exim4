@@ -4,7 +4,8 @@ on:
   - push
 
 env:
-  owner: "${{ github.repository_owner }}-mirror"
+  OWNER: "${{ github.repository_owner }}-mirror"
+  USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
 
 jobs:
 
@@ -16,25 +17,31 @@ jobs:
     runs-on: ubuntu-latest
     name: "GitHub"
     env:
-      domain: "${{ github.server_url }}"
+      DOMAIN: "${{ github.server_url }}"
     steps:
-      - run: |
-          echo "repo_name=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+      - name: "Get repository name"
         shell: bash
-      - run: |
-          curl -X POST \
-          -H 'Authorization: Bearer ${{ secrets.BOT_GITHUB_TOKEN }}' \
-          -H 'Accept: application/vnd.github+json' \
-          '${{ github.api_url }}/orgs/${{ env.owner }}/repos' \
-          -d '{"name":"${{ env.repo_name }}","private":false,"has_issues":false,"has_projects":false,"has_wiki":false}' \
-          -s -o '/dev/null'
+        run: |
+          echo "REPO_NAME=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+      - name: "Create repository"
         shell: bash
-      - uses: ghastore/mirror@main
+        run: |
+          http="$( curl -s -o '/dev/null' -I -w '%{http_code}' -A '${{ env.USER_AGENT }}' '${{ github.server_url }}/${{ env.OWNER }}/${{ env.REPO_NAME }}' )"
+          if [[ "${http}" -ne 200 ]]; then
+            curl -X POST \
+            -H 'Authorization: Bearer ${{ secrets.BOT_GITHUB_TOKEN }}' \
+            -H 'Accept: application/vnd.github+json' \
+            -A '${{ env.USER_AGENT }}' \
+            '${{ github.api_url }}/orgs/${{ env.OWNER }}/repos' \
+            -d '{"name":"${{ env.REPO_NAME }}","private":false,"has_issues":false,"has_projects":false,"has_wiki":false}'
+          fi
+      - name: "Mirror repository"
+        uses: ghastore/mirror@main
         with:
           src_repo: "${{ github.server_url }}/${{ github.repository }}.git"
           src_user: "${{ secrets.BOT_GITHUB_NAME }}"
           src_token: "${{ secrets.BOT_GITHUB_TOKEN }}"
-          dst_repo: "${{ env.domain }}/${{ env.owner }}/${{ env.repo_name }}.git"
+          dst_repo: "${{ env.DOMAIN }}/${{ env.OWNER }}/${{ env.REPO_NAME }}.git"
           dst_user: "${{ secrets.BOT_GITHUB_NAME }}"
           dst_token: "${{ secrets.BOT_GITHUB_TOKEN }}"
 
@@ -46,27 +53,33 @@ jobs:
     runs-on: ubuntu-latest
     name: "GitLab"
     env:
-      domain: "https://gitlab.com"
-      version: "v4"
-      nsID: '57669711'
+      DOMAIN: "https://gitlab.com"
+      VERSION: "v4"
+      NSID: '57669711'
     steps:
-      - run: |
-          echo "repo_name=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+      - name: "Get repository name"
         shell: bash
-      - run: |
-          curl -X POST \
-          -H 'Authorization: Bearer ${{ secrets.BOT_GITLAB_TOKEN }}' \
-          -H 'Content-Type: application/json' \
-          '${{ env.domain }}/api/${{ env.version }}/projects' \
-          -d '{"name":"${{ env.repo_name }}","path":"${{ env.repo_name }}","namespace_id":"${{ env.nsID }}","visibility":"public","issues_access_level":"disabled","wiki_access_level":"disabled"}' \
-          -s -o '/dev/null'
+        run: |
+          echo "REPO_NAME=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+      - name: "Create repository"
         shell: bash
-      - uses: ghastore/mirror@main
+        run: |
+          http="$( curl -s -o '/dev/null' -I -w '%{http_code}' -A '${{ env.USER_AGENT }}' '${{ env.DOMAIN }}/${{ env.OWNER }}/${{ env.REPO_NAME }}' )"
+          if [[ "${http}" -ne 200 ]]; then
+            curl -X POST \
+            -H 'Authorization: Bearer ${{ secrets.BOT_GITLAB_TOKEN }}' \
+            -H 'Content-Type: application/json' \
+            -A '${{ env.USER_AGENT }}' \
+            '${{ env.DOMAIN }}/api/${{ env.VERSION }}/projects' \
+            -d '{"name":"${{ env.REPO_NAME }}","path":"${{ env.REPO_NAME }}","namespace_id":"${{ env.NSID }}","visibility":"public","issues_access_level":"disabled","wiki_access_level":"disabled"}'
+          fi
+      - name: "Mirror repository"
+        uses: ghastore/mirror@main
         with:
           src_repo: "${{ github.server_url }}/${{ github.repository }}.git"
           src_user: "${{ secrets.BOT_GITHUB_NAME }}"
           src_token: "${{ secrets.BOT_GITHUB_TOKEN }}"
-          dst_repo: "${{ env.domain }}/${{ env.owner }}/${{ env.repo_name }}.git"
+          dst_repo: "${{ env.DOMAIN }}/${{ env.OWNER }}/${{ env.REPO_NAME }}.git"
           dst_user: "${{ secrets.BOT_GITLAB_NAME }}"
           dst_token: "${{ secrets.BOT_GITLAB_TOKEN }}"
 
@@ -78,26 +91,32 @@ jobs:
     runs-on: ubuntu-latest
     name: "Codeberg"
     env:
-      domain: "https://codeberg.org"
-      version: "v1"
+      DOMAIN: "https://codeberg.org"
+      VERSION: "v1"
     steps:
-      - run: |
-          echo "repo_name=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+      - name: "Get repository name"
         shell: bash
-      - run: |
-          curl -X POST \
-          -H 'Authorization: token ${{ secrets.BOT_CODEBERG_TOKEN }}' \
-          -H 'Accept: application/json' \
-          -H 'Content-Type: application/json' \
-          '${{ env.domain }}/api/${{ env.version }}/orgs/${{ env.owner }}/repos' \
-          -d '{"name":"${{ env.repo_name }}"}' \
-          -s -o '/dev/null'
+        run: |
+          echo "REPO_NAME=$( echo '${{ github.repository }}' | awk -F '/' '{ print $2 }' )" >> $GITHUB_ENV
+      - name: "Create repository"
         shell: bash
-      - uses: ghastore/mirror@main
+        run: |
+          http="$( curl -s -o '/dev/null' -I -w '%{http_code}' -A '${{ env.USER_AGENT }}' '${{ env.DOMAIN }}/${{ env.OWNER }}/${{ env.REPO_NAME }}' )"
+          if [[ "${http}" -ne 200 ]]; then
+            curl -X POST \
+            -H 'Authorization: token ${{ secrets.BOT_CODEBERG_TOKEN }}' \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -A '${{ env.USER_AGENT }}' \
+            '${{ env.DOMAIN }}/api/${{ env.VERSION }}/orgs/${{ env.OWNER }}/repos' \
+            -d '{"name":"${{ env.REPO_NAME }}"}'
+          fi
+      - name: "Mirror repository"
+        uses: ghastore/mirror@main
         with:
           src_repo: "${{ github.server_url }}/${{ github.repository }}.git"
           src_user: "${{ secrets.BOT_GITHUB_NAME }}"
           src_token: "${{ secrets.BOT_GITHUB_TOKEN }}"
-          dst_repo: "${{ env.domain }}/${{ env.owner }}/${{ env.repo_name }}.git"
+          dst_repo: "${{ env.DOMAIN }}/${{ env.OWNER }}/${{ env.REPO_NAME }}.git"
           dst_user: "${{ secrets.BOT_CODEBERG_NAME }}"
           dst_token: "${{ secrets.BOT_CODEBERG_TOKEN }}"
